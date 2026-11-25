@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <title>BAR RECIPE — 홈바 메뉴 & 주문</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="BAR RECIPE 홈"><span class="brand-mark">✳</span><span>BAR <b>RECIPE</b></span></a>
+      <div class="topbar-center"><span class="live-dot"></span><span id="headerStatus">오늘의 메뉴</span></div>
+      <button class="btn btn-quiet" id="modeButton"><span>⚙</span> 관리자 모드</button>
+    </header>
+
+    <main id="guestView" class="guest-view">
+      <section class="hero">
+        <div class="eyebrow">YOUR PRIVATE HOME BAR</div>
+        <h1>오늘, 어떤 한 잔을<br /><em>만들어 드릴까요?</em></h1>
+        <p>지금 준비된 재료로 만들 수 있는 메뉴만 모았어요.</p>
+        <div class="menu-count"><span class="live-dot"></span><span id="guestCount">오늘 주문 가능한 칵테일 0종</span></div>
+      </section>
+      <section id="guestMenu" class="menu-grid" aria-live="polite"></section>
+      <footer class="guest-footer">MADE SLOWLY · SERVED WITH CARE</footer>
+    </main>
+
+    <main id="adminView" class="admin-view hidden">
+      <div class="admin-heading"><div><div class="eyebrow">BARTENDER CONSOLE</div><h1>바 운영 보드</h1></div><div class="admin-heading-right"><span class="status-pill"><span class="live-dot"></span> 바텐더 운영 중</span><button class="btn btn-quiet" id="guestButton">← 메뉴판으로 돌아가기</button></div></div>
+      <div class="dashboard-grid">
+        <section class="panel inventory-panel">
+          <div class="panel-heading"><div><div class="eyebrow">PANTRY</div><h2>재료 관리</h2></div><span class="panel-icon">◈</span></div>
+          <form id="ingredientForm" class="add-row"><input id="ingredientInput" maxlength="20" placeholder="새 재료 이름 (최대 20자)" aria-label="새 재료 이름" /><button class="btn btn-primary" type="submit">+ 등록</button></form>
+          <div class="inventory-summary" id="inventorySummary"></div>
+          <div id="ingredientList" class="ingredient-list"></div>
+        </section>
+        <section class="panel recipes-panel">
+          <div class="panel-heading"><div><div class="eyebrow">HOUSE COLLECTION</div><h2>레시피 <span class="sub-count" id="recipeCount"></span></h2></div><button id="addRecipeButton" class="btn btn-primary">+ 레시피 추가</button></div>
+          <div class="filter-row" id="recipeFilters"><button class="filter active" data-filter="all">전체</button><button class="filter" data-filter="ready">제조 가능</button><button class="filter" data-filter="missing">재료 부족</button></div>
+          <div id="recipeList" class="recipe-list"></div>
+        </section>
+        <section class="panel orders-panel">
+          <div class="panel-heading"><div><div class="eyebrow">ON THE BAR</div><h2>예약 현황</h2></div><span id="orderCount" class="count-badge">0건 대기</span></div>
+          <div id="orderList" class="order-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
