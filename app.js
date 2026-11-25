@@ -79,6 +79,26 @@
   function ingredientRow(){return `<div class="ingredient-edit-row"><input name="ingredientName" maxlength="20" placeholder="재료 이름" required /><input name="quantity" maxlength="10" placeholder="분량 (선택)" /><button type="button" class="remove-row" title="행 삭제">×</button></div>`;}
   function setMode(admin){$('#guestView').classList.toggle('hidden',admin);$('#adminView').classList.toggle('hidden',!admin);$('#modeButton').classList.toggle('hidden',admin);$('#headerStatus').textContent=admin?'바텐더 운영 중':'오늘의 메뉴';if(admin)render();window.scrollTo({top:0,behavior:'smooth'});}
   $('#modeButton').onclick=()=>setMode(true);$('#guestButton').onclick=()=>setMode(false);$('#ingredientForm').onsubmit=e=>{e.preventDefault();const input=$('#ingredientInput'),name=input.value.trim().replace(/\s+/g,' ');if(!name){toast('재료 이름을 입력해 주세요.','warning');return;}if(name.length>20){toast('20자 이내로 입력해 주세요.','warning');return;}if(!/^[가-힣a-zA-Z0-9 -]+$/.test(name)){toast('한글, 영문, 숫자, 공백, 하이픈만 쓸 수 있습니다.','warning');return;}if(state.ingredients.some(i=>normalized(i.name)===normalized(name))){toast('이미 등록된 재료입니다.','warning');return;}state.ingredients.push({id:crypto.randomUUID(),name,available:true,detail:''});save();input.value='';render();toast(`'${name}'을(를) 등록했습니다.`);};
-  $('#addRecipeButton').onclick=openRecipeForm;$('#recipeFilters').onclick=e=>{const b=e.target.closest('[data-filter]');if(b){filter=b.dataset.filter;renderRecipes();}};
+  $('#addRecipeButton').onclick=openRecipeForm;
+  $('#importJsonButton').onclick=()=>$('#jsonFileInput').click();
+  $('#jsonFileInput').onchange=async e=>{
+    const file=e.target.files?.[0]; if(!file)return;
+    try {
+      const data=JSON.parse(await file.text());
+      const recipes=Array.isArray(data)?data:data.recipes;
+      if(!Array.isArray(recipes)||!recipes.length)throw new Error('JSON에 recipes 배열이 없습니다.');
+      const valid=recipes.every(r=>r&&typeof r.name==='string'&&r.name.trim()&&Number.isFinite(Number(r.abv))&&typeof r.glass==='string'&&typeof r.method==='string'&&Array.isArray(r.ingredients)&&r.ingredients.length>0&&r.ingredients.every(i=>i&&typeof i.name==='string'&&i.name.trim()));
+      if(!valid)throw new Error('레시피마다 이름, 도수, 잔, 재료 배열, 제조 방법이 있어야 합니다.');
+      const newRecipes=recipes.filter(r=>!state.recipes.some(old=>normalized(old.name)===normalized(r.name)));
+      const importedIngredients=Array.isArray(data.ingredients)?data.ingredients.filter(i=>i&&typeof i.name==='string'&&i.name.trim()):[];
+      const newIngredients=importedIngredients.filter(i=>!state.ingredients.some(old=>normalized(old.name)===normalized(i.name)));
+      const readyRecipes=newRecipes.map((r,index)=>({...r,id:crypto.randomUUID(),abv:Number(r.abv),active:false,created:Date.now()+index,ingredients:r.ingredients.map(i=>({name:i.name.trim().replace(/\s+/g,' '),qty:typeof i.qty==='string'?i.qty:''}))}));
+      modal(`<div class="modal-head"><div><div class="eyebrow">JSON IMPORT</div><h3>가져올 내용을 확인해 주세요</h3></div><button class="modal-close" data-close aria-label="닫기">×</button></div><div class="confirm-copy"><b>${esc(file.name)}</b><br>새 레시피 ${readyRecipes.length}개, 새 재료 ${newIngredients.length}개를 추가합니다.<br>이름이 같은 레시피와 재료는 건너뜁니다. 가져온 레시피는 메뉴에 자동 공개되지 않습니다.</div><div class="modal-actions"><button class="btn btn-quiet" data-close>취소</button><button id="confirmImport" class="btn btn-primary">가져오기</button></div>`);
+      $('#confirmImport').onclick=()=>{const oldState=state;state={...state,ingredients:[...state.ingredients,...newIngredients.map(i=>({id:crypto.randomUUID(),name:i.name.trim().replace(/\s+/g,' '),available:typeof i.available==='boolean'?i.available:true,detail:typeof i.detail==='string'?i.detail:''}))],recipes:[...readyRecipes,...state.recipes]};if(save()){closeModal();render();toast(`레시피 ${readyRecipes.length}개와 재료 ${newIngredients.length}개를 가져왔습니다.`);}else state=oldState;};
+    } catch(err){toast(err instanceof SyntaxError?'JSON 파일 형식을 읽을 수 없습니다.':err.message,'error');}
+    e.target.value='';
+  };
+  $('#exportJsonButton').onclick=()=>{const payload={version:1,exportedAt:new Date().toISOString(),ingredients:state.ingredients.map(({name,available,detail})=>({name,available,detail})),recipes:state.recipes.map(({name,english,abv,glass,note,ingredients,method})=>({name,english,abv,glass,note,ingredients,method}))};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`bar-menu-recipes-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);toast('레시피 JSON 파일을 내보냈습니다.');};
+  $('#recipeFilters').onclick=e=>{const b=e.target.closest('[data-filter]');if(b){filter=b.dataset.filter;renderRecipes();}};
   render();
 })();
